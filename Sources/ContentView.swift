@@ -119,7 +119,7 @@ struct ContentView: View {
                 .font(.system(size: 12))
             HStack{
                 Button("Previous") { cycler.previous() }
-                    .disabled(cycler.library.isEmpty)
+                    .disabled(!cycler.canGoBack)
                 Button("Next") { cycler.next() }
                     .disabled(cycler.library.isEmpty)
                 Spacer()
@@ -135,6 +135,20 @@ struct ContentView: View {
                         Text(url.lastPathComponent)
                             .font(.system(size:11))
                             .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .help(url.path)
+                    }
+                }
+            }
+            if !cycler.recent.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Recent")
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    ForEach(cycler.recent.prefix(4), id: \.self) { url in
+                        Text(url.lastPathComponent)
+                            .font(.system(size: 11))
+                            .foregroundStyle(.tertiary)
                             .lineLimit(1)
                             .truncationMode(.middle)
                             .help(url.path)
