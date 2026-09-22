@@ -6,6 +6,12 @@ struct ContentView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            Text(cycler.currentImage?.lastPathComponent ?? "No wallpaper showing")
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .help(cycler.currentImage?.path ?? "")
+
             Text("Wallpaper folders")
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
 
