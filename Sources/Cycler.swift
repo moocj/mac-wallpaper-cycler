@@ -17,6 +17,10 @@ final class Cycler: ObservableObject {
         didSet { UserDefaults.standard.set(isPaused, forKey : Key.paused) }
     }
 
+    @Published var shuffle = false {
+        didSet { UserDefaults.standard.set(shuffle, forKey: Key.shuffle) }
+    }
+
     private static let imageExtensions: Set<String> = [
         "jpg", "jpeg", "png", "heic", "heif", "tif", "tiff", "bmp", "gif", "webp"
     ]
@@ -45,6 +49,7 @@ final class Cycler: ObservableObject {
         static let paused = "paused"
         static let intervalValue = "intervalValue"
         static let intervalUnit = "intervalUnit"
+        static let shuffle = "shuffle"
     }
 
     private init() {
@@ -56,6 +61,7 @@ final class Cycler: ObservableObject {
             }
 
         isPaused = UserDefaults.standard.bool(forKey: Key.paused)
+        shuffle = UserDefaults.standard.bool(forKey: Key.shuffle)
         let savedInterval = UserDefaults.standard.double(forKey: Key.intervalValue)
         intervalValue = savedInterval > 0 ? savedInterval : 15
         intervalUnit = IntervalUnit(rawValue: UserDefaults.standard.string(forKey: Key.intervalUnit) ?? "") ?? .minutes
@@ -73,7 +79,7 @@ final class Cycler: ObservableObject {
         panel.prompt = "Add"
         panel.message = "Pick the folder that contains your wallpapers."
 
-        // try to put this infront of any other apps to prevent it being hidden since its not a dock app
+        // try to put this in front of any other apps to prevent it being hidden since its not a dock app
         if #available(macOS 14.0, *) {
             NSApp.activate()
         } else {
@@ -157,6 +163,15 @@ final class Cycler: ObservableObject {
     // move to next wallpaper and wrap at end
     func next() {
         guard !library.isEmpty else { return }
+
+        if shuffle {
+            // show anything but the current to avoid duplicates
+            let others = library.filter {$0 != currentImage }
+            let pool = others.isEmpty ? library: others
+            if let pick = pool.randomElement() { apply(pick)}
+            return
+        }
+
         let index = currentIndex.map { ($0 + 1) % library.count} ?? 0
         apply(library[index])
     }

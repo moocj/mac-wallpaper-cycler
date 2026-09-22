@@ -115,6 +115,8 @@ struct ContentView: View {
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
             }
+            Toggle("Shuffle", isOn: $cycler.shuffle)
+                .font(.system(size: 12))
             HStack{
                 Button("Previous") { cycler.previous() }
                     .disabled(cycler.library.isEmpty)
