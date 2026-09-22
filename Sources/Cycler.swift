@@ -107,6 +107,26 @@ final class Cycler: ObservableObject {
         apply(url)
     }
 
+    // stores where current wallpaper is
+    private var currentIndex: Int? {
+        guard let current = currentImage else { return nil }
+        return library.firstIndex(of: current)
+    }
+
+    // move to next wallpaper and wrap at end
+    func next() {
+        guard !library.isEmpty else { return }
+        let index = currentIndex.map { ($0 + 1) % library.count} ?? 0
+        apply(library[index])
+    }
+
+    // move to previous wallpaper and wrap at start
+    func previous() {
+        guard !library.isEmpty else { return }
+        let index = currentIndex.map { ($0 - 1 + library.count) % library.count} ?? library.count - 1
+        apply(library[index])
+    }
+
     private func save(_ paths: [String]) {
         UserDefaults.standard.set(paths, forKey: Key.sources)
         sources = paths.map { URL(fileURLWithPath: $0) }
