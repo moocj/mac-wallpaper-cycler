@@ -127,7 +127,20 @@ struct ContentView: View {
                     cycler.isPaused.toggle()
                 }
             }
-
+            if !cycler.upNext.isEmpty {
+                VStack(alignment: .leading, spacing:6) {
+                    Text("Up next")
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    ForEach(cycler.upNext, id: \.self) { url in
+                        Text(url.lastPathComponent)
+                            .font(.system(size:11))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .help(url.path)
+                    }
+                }
+            }
             HStack {
                 Button("Choose folder...") {
                     cycler.addSources()

@@ -10,6 +10,8 @@ final class Cycler: ObservableObject {
     @Published private(set) var sources: [URL] = []
     // wallpapers
     @Published private(set) var library: [URL] = []
+    // the wallpaper up next for previewing
+    @Published private(set) var upNext: [URL] = []
     // current wallpaper
     @Published private(set) var currentImage: URL? = nil
     // prevent wallpaper changing when paused
@@ -18,7 +20,10 @@ final class Cycler: ObservableObject {
     }
 
     @Published var shuffle = false {
-        didSet { UserDefaults.standard.set(shuffle, forKey: Key.shuffle) }
+        didSet {
+            UserDefaults.standard.set(shuffle, forKey: Key.shuffle)
+            rebuildQueue()
+        }
     }
 
     private static let imageExtensions: Set<String> = [
@@ -42,6 +47,7 @@ final class Cycler: ObservableObject {
     var intervalSeconds: Double { max(5, intervalValue * intervalUnit.seconds)}
 
     private var timer: Timer?
+    private var queue: [URL] = []
 
     private enum Key {
         static let sources = "sources"
@@ -127,6 +133,22 @@ final class Cycler: ObservableObject {
         var seen = Set<String>()
         library = found.filter { seen.insert($0.path).inserted }
 
+        rebuildQueue()
+    }
+
+    private func rebuildQueue() {
+        queue = library
+        if shuffle { queue.shuffle() }
+
+        // dont give back the same wallpaper
+        if let current = currentImage, queue.first == current, queue.count > 1 {
+            queue.append(queue.removeFirst())
+        }
+        refreshUpNext()
+    }
+
+    private func refreshUpNext() {
+        upNext = Array(queue.prefix(4))
     }
 
     func apply(_ url: URL) {
@@ -164,16 +186,11 @@ final class Cycler: ObservableObject {
     func next() {
         guard !library.isEmpty else { return }
 
-        if shuffle {
-            // show anything but the current to avoid duplicates
-            let others = library.filter {$0 != currentImage }
-            let pool = others.isEmpty ? library: others
-            if let pick = pool.randomElement() { apply(pick)}
-            return
-        }
+        if queue.isEmpty { rebuildQueue() }
+        guard !queue.isEmpty else { return }
 
-        let index = currentIndex.map { ($0 + 1) % library.count} ?? 0
-        apply(library[index])
+        apply(queue.removeFirst())
+        refreshUpNext()
     }
 
     // move to previous wallpaper and wrap at start
