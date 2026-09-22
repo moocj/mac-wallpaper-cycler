@@ -8,6 +8,11 @@ final class Cycler: ObservableObject {
 
     // wallpaper folders
     @Published private(set) var sources: [URL] = []
+    @Published private(set) var library: [URL] = []
+
+    private static let imageExtensions: Set<String> = [
+        "jpg", "jpeg", "png", "heic", "heif", "tif", "tiff", "bmp", "gif", "webp"
+    ]
 
     private enum Key {
         static let sources = "sources"
@@ -16,6 +21,7 @@ final class Cycler: ObservableObject {
     private init() {
         let saved = UserDefaults.standard.stringArray(forKey: Key.sources) ?? []
         sources = saved.map {URL(fileURLWithPath: $0) }
+        rescan()
     }
 
     // ask for folder(s) and add any that aren't in list
@@ -43,8 +49,35 @@ final class Cycler: ObservableObject {
         save(paths)
     }
 
+    // get images inside source folders
+    func rescan() {
+        var found: [URL] = []
+        let fm = FileManager.default
+
+        for source in sources {
+            guard let walker = fm.enumerator(
+                at: source,
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles, .skipsPackageDescendants]
+            ) else { continue }
+
+            for case let url as URL in walker {
+                if Self.imageExtensions.contains(url.pathExtension.lowercased()) {
+                    found.append(url)
+                }
+            }
+        }
+
+        // stop duplicate wallpapers
+        var seen = Set<String>()
+        library = found.filter { seen.insert($0.path).inserted }
+
+
+    }
+
     private func save(_ paths: [String]) {
         UserDefaults.standard.set(paths, forKey: Key.sources)
         sources = paths.map { URL(fileURLWithPath: $0) }
+        rescan()
     }
 }

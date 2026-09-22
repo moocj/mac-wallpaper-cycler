@@ -24,6 +24,10 @@ struct ContentView: View {
                             .help(url.path)
                     }
                 }
+                Text("\(cycler.library.count) wallpapers found")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
             }
             HStack {
                 Button("Choose folder...") {
