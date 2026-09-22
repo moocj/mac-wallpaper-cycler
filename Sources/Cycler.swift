@@ -59,6 +59,15 @@ final class Cycler: ObservableObject {
         save(paths)
     }
 
+    func removeSource(_ url: URL) {
+        save(sources.map(\.path).filter{ $0 != url.path })
+
+        // if the wallpaper was from that folder then switch
+        if let showing = currentImage, !library.contains(showing), let first = library.first {
+            apply(first)
+        }
+    }
+
     // get images inside source folders
     func rescan() {
         var found: [URL] = []
