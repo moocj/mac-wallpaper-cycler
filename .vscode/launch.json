@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:wallpapercycler}",
+            "name": "Debug WallpaperCycler",
+            "target": "WallpaperCycler",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug WallpaperCycler"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:wallpapercycler}",
+            "name": "Release WallpaperCycler",
+            "target": "WallpaperCycler",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release WallpaperCycler"
+        }
+    ]
+}
