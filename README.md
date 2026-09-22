@@ -21,3 +21,8 @@ Free forever, and completely open source. No account signup or telemetry.
 The app will appear in the top menu bar, not in the dock.
 
 
+## Build as an app
+
+```bash
+    bash build.sh
+```
