@@ -131,6 +131,16 @@ struct ContentView: View {
                     cycler.isPaused.toggle()
                 }
             }
+            if cycler.hiddenCount > 0 {
+                HStack {
+                    Text("\(cycler.hiddenCount) hidden")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                    Spacer()
+                    Button("Restore") { cycler.restoreHidden()}
+                }
+            }
             if !cycler.upNext.isEmpty {
                 VStack(alignment: .leading, spacing:6) {
                     Text("Up next")

@@ -223,7 +223,13 @@ final class Cycler: ObservableObject {
             currentImage = nil // stops it being add to history
             next()
         }
+    }
 
+    func restoreHidden() {
+        hidden.removeAll()
+        hiddenCount = 0
+        UserDefaults.standard.removeObject(forKey: Key.hidden)
+        rescan()
     }
 
     // either puts the last wallpaper back or shows the first found to avoid empty wallpaper
