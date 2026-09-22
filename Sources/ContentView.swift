@@ -25,9 +25,15 @@ struct ContentView: View {
                     }
                 }
             }
-
-            Button("Choose folder...") {
-                cycler.addSources()
+            HStack {
+                Button("Choose folder...") {
+                    cycler.addSources()
+                }
+                Spacer()
+                Button("Quit"){
+                    NSApp.terminate(nil)
+                }
+                .keyboardShortcut("q")
             }
         }
         .frame(width: 300, alignment: .leading)
