@@ -20,6 +20,8 @@ final class Cycler: ObservableObject {
     @Published private(set) var currentImage: URL? = nil
     // number of hidden wallpapers
     @Published private(set) var hiddenCount = 0;
+    // favourite wallpapers
+    @Published private(set) var favourites: Set<String> = []
 
     // prevent wallpaper changing when paused
     @Published var isPaused = false {
@@ -62,6 +64,10 @@ final class Cycler: ObservableObject {
     }
 
     var intervalSeconds: Double { max(5, intervalValue * intervalUnit.seconds)}
+    var currentIsFavourite: Bool {
+        guard let url = currentImage else {return false }
+        return favourites.contains(url.path)
+    }
 
     private var timer: Timer?
     private var queue: [URL] = []
@@ -77,6 +83,7 @@ final class Cycler: ObservableObject {
         static let shuffle = "shuffle"
         static let snapToClock = "snapToClock"
         static let hidden = "hidden"
+        static let favourites = "favourites"
     }
 
     private init() {
@@ -99,6 +106,8 @@ final class Cycler: ObservableObject {
 
         hidden = Set(UserDefaults.standard.stringArray(forKey: Key.hidden) ?? [])
         hiddenCount = hidden.count
+
+        favourites = Set(UserDefaults.standard.stringArray(forKey: Key.favourites) ?? [])
 
         rescan()
         showSomething()
@@ -210,6 +219,11 @@ final class Cycler: ObservableObject {
         hiddenCount = hidden.count
         UserDefaults.standard.set(Array(hidden), forKey: Key.hidden)
 
+        // a wallpaper that is hidden shouldn't be in favourite
+        if favourites.remove(url.path) != nil {
+            UserDefaults.standard.set(Array(favourites), forKey: Key.favourites)
+        }
+
         // hide the wallpaper from app
         library.removeAll { $0.path == url.path }
         queue.removeAll { $0.path == url.path }
@@ -230,6 +244,20 @@ final class Cycler: ObservableObject {
         hiddenCount = 0
         UserDefaults.standard.removeObject(forKey: Key.hidden)
         rescan()
+    }
+
+    func toggleFavouriteCurrent() {
+        guard let url = currentImage else { return }
+        toggleFavourite(url)
+    }
+
+    func toggleFavourite(_ url: URL) {
+        if favourites.contains(url.path) {
+            favourites.remove(url.path)
+        } else {
+            favourites.insert(url.path)
+        }
+        UserDefaults.standard.set(Array(favourites), forKey: Key.favourites)
     }
 
     // either puts the last wallpaper back or shows the first found to avoid empty wallpaper

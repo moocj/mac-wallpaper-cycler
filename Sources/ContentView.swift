@@ -126,6 +126,16 @@ struct ContentView: View {
                     .disabled(cycler.library.isEmpty)
                 Button("Hide") { cycler.hideCurrent() }
                     .disabled(cycler.currentImage == nil)
+                Button {
+                    cycler.toggleFavouriteCurrent()
+                } label: {
+                    Image(systemName: cycler.currentIsFavourite ? "heart.fill": "heart")
+                        .font(.system(size: 13))
+                        .foregroundStyle(cycler.currentIsFavourite ? Color.accentColor : Color.secondary)
+                }
+                .buttonStyle(.plain)
+                .disabled(cycler.currentImage == nil)
+                .help("Favourite this wallpaper")
                 Spacer()
                 Button(cycler.isPaused ? "Resume" : "Pause") {
                     cycler.isPaused.toggle()
