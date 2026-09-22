@@ -20,13 +20,23 @@ final class Cycler: ObservableObject {
     @Published private(set) var currentImage: URL? = nil
     // prevent wallpaper changing when paused
     @Published var isPaused = false {
-        didSet { UserDefaults.standard.set(isPaused, forKey : Key.paused) }
+        didSet {
+            UserDefaults.standard.set(isPaused, forKey : Key.paused)
+            startTimer()
+        }
     }
 
     @Published var shuffle = false {
         didSet {
             UserDefaults.standard.set(shuffle, forKey: Key.shuffle)
             rebuildQueue()
+        }
+    }
+
+    @Published var snapToClock = false {
+        didSet {
+            UserDefaults.standard.set(snapToClock, forKey: Key.snapToClock)
+            startTimer()
         }
     }
 
@@ -61,6 +71,7 @@ final class Cycler: ObservableObject {
         static let intervalValue = "intervalValue"
         static let intervalUnit = "intervalUnit"
         static let shuffle = "shuffle"
+        static let snapToClock = "snapToClock"
     }
 
     private init() {
@@ -76,6 +87,7 @@ final class Cycler: ObservableObject {
         let savedInterval = UserDefaults.standard.double(forKey: Key.intervalValue)
         intervalValue = savedInterval > 0 ? savedInterval : 15
         intervalUnit = IntervalUnit(rawValue: UserDefaults.standard.string(forKey: Key.intervalUnit) ?? "") ?? .minutes
+        snapToClock = UserDefaults.standard.bool(forKey: Key.snapToClock)
         rescan()
         showSomething()
         startTimer()
@@ -184,14 +196,27 @@ final class Cycler: ObservableObject {
 
     private func startTimer() {
         timer?.invalidate()
-        let repeating = Timer(timeInterval: intervalSeconds, repeats: true) {
+        timer = nil
+
+        guard !isPaused else { return }
+
+        let delay = max(1, snapToClock ? secondsUntilNextClockBoundary() : intervalSeconds)
+
+        let once = Timer(timeInterval: delay, repeats: false) {
             [weak self] _ in
-                guard let self, !self.isPaused else { return }
-                self.next()
+                self?.next()
+                self?.startTimer()
         }
-        // .common means it will still work if another menu is open
-        RunLoop.main.add(repeating, forMode: .common)
-        timer = repeating
+        RunLoop.main.add(once, forMode: .common)
+        timer = once
+    }
+
+    private func secondsUntilNextClockBoundary() -> Double {
+        let now = Date()
+        // time since midnight so we can snap boundaries to :00, :15, :30 etc
+        let elapsed = now.timeIntervalSince(Calendar.current.startOfDay(for: now))
+        let next = (floor(elapsed / intervalSeconds) + 1) * intervalSeconds
+        return next - elapsed
     }
 
     // move to next wallpaper and wrap at end

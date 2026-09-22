@@ -117,6 +117,8 @@ struct ContentView: View {
             }
             Toggle("Shuffle", isOn: $cycler.shuffle)
                 .font(.system(size: 12))
+            Toggle("Snap to the clock", isOn: $cycler.snapToClock)
+                .font(.system(size: 12))
             HStack{
                 Button("Previous") { cycler.previous() }
                     .disabled(!cycler.canGoBack)
