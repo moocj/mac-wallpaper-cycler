@@ -47,6 +47,9 @@ struct ContentView: View {
                 Button("Next") { cycler.next() }
                     .disabled(cycler.library.isEmpty)
                 Spacer()
+                Button(cycler.isPaused ? "Resume" : "Pause") {
+                    cycler.isPaused.toggle()
+                }
             }
 
             HStack {

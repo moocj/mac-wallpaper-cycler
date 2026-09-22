@@ -12,6 +12,10 @@ final class Cycler: ObservableObject {
     @Published private(set) var library: [URL] = []
     // current wallpaper
     @Published private(set) var currentImage: URL? = nil
+    // prevent wallpaper changing when paused
+    @Published var isPaused = false {
+        didSet { UserDefaults.standard.set(isPaused, forKey : Key.paused) }
+    }
 
     private static let imageExtensions: Set<String> = [
         "jpg", "jpeg", "png", "heic", "heif", "tif", "tiff", "bmp", "gif", "webp"
@@ -24,6 +28,7 @@ final class Cycler: ObservableObject {
     private enum Key {
         static let sources = "sources"
         static let lastImage = "lastImage"
+        static let paused = "paused"
     }
 
     private init() {
@@ -33,6 +38,8 @@ final class Cycler: ObservableObject {
             FileManager.default.fileExists(atPath: path) {
                 currentImage = URL(fileURLWithPath: path)
             }
+
+        isPaused = UserDefaults.standard.bool(forKey: Key.paused)
 
         rescan()
         showSomething()
@@ -115,7 +122,9 @@ final class Cycler: ObservableObject {
     private func startTimer() {
         timer?.invalidate()
         let repeating = Timer(timeInterval: changeEvery, repeats: true) {
-            [weak self] _ in self?.next()
+            [weak self] _ in
+                guard let self, !self.isPaused else { return }
+                self.next()
         }
         // .common means it will still work if another menu is open
         RunLoop.main.add(repeating, forMode: .common)
