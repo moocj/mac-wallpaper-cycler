@@ -41,6 +41,14 @@ struct ContentView: View {
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
+            HStack{
+                Button("Previous") { cycler.previous() }
+                    .disabled(cycler.library.isEmpty)
+                Button("Next") { cycler.next() }
+                    .disabled(cycler.library.isEmpty)
+                Spacer()
+            }
+
             HStack {
                 Button("Choose folder...") {
                     cycler.addSources()
