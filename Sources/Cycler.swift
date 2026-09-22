@@ -21,14 +21,30 @@ final class Cycler: ObservableObject {
         "jpg", "jpeg", "png", "heic", "heif", "tif", "tiff", "bmp", "gif", "webp"
     ]
 
-    // how often to change (15 mins)
-    private let changeEvery: TimeInterval = 15 * 60
+    @Published var intervalValue: Double = 15 {
+        didSet{
+            UserDefaults.standard.set(intervalValue, forKey: Key.intervalValue)
+            startTimer()
+        }
+    }
+
+    @Published var intervalUnit: IntervalUnit = .minutes {
+        didSet {
+            UserDefaults.standard.set(intervalUnit.rawValue, forKey: Key.intervalUnit)
+            startTimer()
+        }
+    }
+
+    var intervalSeconds: Double { max(5, intervalValue * intervalUnit.seconds)}
+
     private var timer: Timer?
 
     private enum Key {
         static let sources = "sources"
         static let lastImage = "lastImage"
         static let paused = "paused"
+        static let intervalValue = "intervalValue"
+        static let intervalUnit = "intervalUnit"
     }
 
     private init() {
@@ -40,7 +56,9 @@ final class Cycler: ObservableObject {
             }
 
         isPaused = UserDefaults.standard.bool(forKey: Key.paused)
-
+        let savedInterval = UserDefaults.standard.double(forKey: Key.intervalValue)
+        intervalValue = savedInterval > 0 ? savedInterval : 15
+        intervalUnit = IntervalUnit(rawValue: UserDefaults.standard.string(forKey: Key.intervalUnit) ?? "") ?? .minutes
         rescan()
         showSomething()
         startTimer()
@@ -121,7 +139,7 @@ final class Cycler: ObservableObject {
 
     private func startTimer() {
         timer?.invalidate()
-        let repeating = Timer(timeInterval: changeEvery, repeats: true) {
+        let repeating = Timer(timeInterval: intervalSeconds, repeats: true) {
             [weak self] _ in
                 guard let self, !self.isPaused else { return }
                 self.next()
