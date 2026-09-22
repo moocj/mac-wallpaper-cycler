@@ -12,6 +12,10 @@ final class Cycler: ObservableObject {
     @Published private(set) var library: [URL] = []
     // the wallpaper up next for previewing
     @Published private(set) var upNext: [URL] = []
+    // wallpapers that have just been shown
+    @Published private(set) var recent: [URL] = []
+    // flag is there are previous wallpapers we can go back to
+    @Published private(set) var canGoBack = false
     // current wallpaper
     @Published private(set) var currentImage: URL? = nil
     // prevent wallpaper changing when paused
@@ -48,6 +52,7 @@ final class Cycler: ObservableObject {
 
     private var timer: Timer?
     private var queue: [URL] = []
+    private var history: [URL] = []
 
     private enum Key {
         static let sources = "sources"
@@ -151,6 +156,18 @@ final class Cycler: ObservableObject {
         upNext = Array(queue.prefix(4))
     }
 
+    private func pushHistory(_ url: URL) {
+        history.append(url)
+        // cap of 50 wallpapers
+        if history.count > 50 {history.removeFirst() }
+        updateRecent()
+    }
+
+    private func updateRecent() {
+        recent = Array(history.reversed().prefix(8))
+        canGoBack = !history.isEmpty
+    }
+
     func apply(_ url: URL) {
         for screen in NSScreen.screens {
             try? NSWorkspace.shared.setDesktopImageURL(url, for: screen, options: [:])
@@ -176,11 +193,6 @@ final class Cycler: ObservableObject {
         RunLoop.main.add(repeating, forMode: .common)
         timer = repeating
     }
-    // stores where current wallpaper is
-    private var currentIndex: Int? {
-        guard let current = currentImage else { return nil }
-        return library.firstIndex(of: current)
-    }
 
     // move to next wallpaper and wrap at end
     func next() {
@@ -189,15 +201,22 @@ final class Cycler: ObservableObject {
         if queue.isEmpty { rebuildQueue() }
         guard !queue.isEmpty else { return }
 
+        if let current = currentImage { pushHistory(current) }
         apply(queue.removeFirst())
         refreshUpNext()
     }
 
-    // move to previous wallpaper and wrap at start
+    // move to previous wallpaper and wrap at start (now using history)
     func previous() {
-        guard !library.isEmpty else { return }
-        let index = currentIndex.map { ($0 - 1 + library.count) % library.count} ?? library.count - 1
-        apply(library[index])
+        guard let earlier = history.popLast() else { return }
+
+        // current wallpaper goes to front of queue so
+        // stepping back and then forward moves back to same wallpaper
+        if let current = currentImage { queue.insert(current, at: 0)}
+
+        apply(earlier)
+        updateRecent()
+        refreshUpNext()
     }
 
     private func save(_ paths: [String]) {
