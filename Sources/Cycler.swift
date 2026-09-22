@@ -18,6 +18,9 @@ final class Cycler: ObservableObject {
     @Published private(set) var canGoBack = false
     // current wallpaper
     @Published private(set) var currentImage: URL? = nil
+    // number of hidden wallpapers
+    @Published private(set) var hiddenCount = 0;
+
     // prevent wallpaper changing when paused
     @Published var isPaused = false {
         didSet {
@@ -63,6 +66,7 @@ final class Cycler: ObservableObject {
     private var timer: Timer?
     private var queue: [URL] = []
     private var history: [URL] = []
+    private var hidden: Set<String> = []
 
     private enum Key {
         static let sources = "sources"
@@ -72,11 +76,13 @@ final class Cycler: ObservableObject {
         static let intervalUnit = "intervalUnit"
         static let shuffle = "shuffle"
         static let snapToClock = "snapToClock"
+        static let hidden = "hidden"
     }
 
     private init() {
         let saved = UserDefaults.standard.stringArray(forKey: Key.sources) ?? []
         sources = saved.map {URL(fileURLWithPath: $0) }
+
         if let path = UserDefaults.standard.string(forKey: Key.lastImage),
             FileManager.default.fileExists(atPath: path) {
                 currentImage = URL(fileURLWithPath: path)
@@ -84,10 +90,16 @@ final class Cycler: ObservableObject {
 
         isPaused = UserDefaults.standard.bool(forKey: Key.paused)
         shuffle = UserDefaults.standard.bool(forKey: Key.shuffle)
+
         let savedInterval = UserDefaults.standard.double(forKey: Key.intervalValue)
         intervalValue = savedInterval > 0 ? savedInterval : 15
         intervalUnit = IntervalUnit(rawValue: UserDefaults.standard.string(forKey: Key.intervalUnit) ?? "") ?? .minutes
+
         snapToClock = UserDefaults.standard.bool(forKey: Key.snapToClock)
+
+        hidden = Set(UserDefaults.standard.stringArray(forKey: Key.hidden) ?? [])
+        hiddenCount = hidden.count
+
         rescan()
         showSomething()
         startTimer()
@@ -148,7 +160,7 @@ final class Cycler: ObservableObject {
 
         // stop duplicate wallpapers
         var seen = Set<String>()
-        library = found.filter { seen.insert($0.path).inserted }
+        library = found.filter { !hidden.contains($0.path) && seen.insert($0.path).inserted}
 
         rebuildQueue()
     }
@@ -186,6 +198,38 @@ final class Cycler: ObservableObject {
         }
         currentImage = url
         UserDefaults.standard.set(url.path, forKey: Key.lastImage)
+    }
+
+    func hideCurrent() {
+        guard let url = currentImage else { return }
+        hide(url)
+    }
+
+    func hide(_ url: URL) {
+        hidden.insert(url.path)
+        hiddenCount = hidden.count
+        UserDefaults.standard.set(Array(hidden), forKey: Key.hidden)
+
+        // hide the wallpaper from app
+        library.removeAll { $0.path == url.path }
+        queue.removeAll { $0.path == url.path }
+        history.removeAll { $0.path == url.path }
+
+        updateRecent()
+        refreshUpNext()
+
+        // if the wallpaper was active, move on
+        if currentImage?.path == url.path {
+            currentImage = nil // stops it being add to history
+            next()
+        }
+    }
+
+    func restoreHidden() {
+        hidden.removeAll()
+        hiddenCount = 0
+        UserDefaults.standard.removeObject(forKey: Key.hidden)
+        rescan()
     }
 
     // either puts the last wallpaper back or shows the first found to avoid empty wallpaper

@@ -124,9 +124,21 @@ struct ContentView: View {
                     .disabled(!cycler.canGoBack)
                 Button("Next") { cycler.next() }
                     .disabled(cycler.library.isEmpty)
+                Button("Hide") { cycler.hideCurrent() }
+                    .disabled(cycler.currentImage == nil)
                 Spacer()
                 Button(cycler.isPaused ? "Resume" : "Pause") {
                     cycler.isPaused.toggle()
+                }
+            }
+            if cycler.hiddenCount > 0 {
+                HStack {
+                    Text("\(cycler.hiddenCount) hidden")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                    Spacer()
+                    Button("Restore") { cycler.restoreHidden()}
                 }
             }
             if !cycler.upNext.isEmpty {
