@@ -8,7 +8,10 @@ final class Cycler: ObservableObject {
 
     // wallpaper folders
     @Published private(set) var sources: [URL] = []
+    // wallpapers
     @Published private(set) var library: [URL] = []
+    // current wallpaper
+    @Published private(set) var currentImage: URL? = nil
 
     private static let imageExtensions: Set<String> = [
         "jpg", "jpeg", "png", "heic", "heif", "tif", "tiff", "bmp", "gif", "webp"
@@ -16,12 +19,19 @@ final class Cycler: ObservableObject {
 
     private enum Key {
         static let sources = "sources"
+        static let lastImage = "lastImage"
     }
 
     private init() {
         let saved = UserDefaults.standard.stringArray(forKey: Key.sources) ?? []
         sources = saved.map {URL(fileURLWithPath: $0) }
+        if let path = UserDefaults.standard.string(forKey: Key.lastImage),
+            FileManager.default.fileExists(atPath: path) {
+                currentImage = URL(fileURLWithPath: path)
+            }
+
         rescan()
+        showSomething()
     }
 
     // ask for folder(s) and add any that aren't in list
@@ -72,12 +82,26 @@ final class Cycler: ObservableObject {
         var seen = Set<String>()
         library = found.filter { seen.insert($0.path).inserted }
 
+    }
 
+    func apply(_ url: URL) {
+        for screen in NSScreen.screens {
+            try? NSWorkspace.shared.setDesktopImageURL(url, for: screen, options: [:])
+        }
+        currentImage = url
+        UserDefaults.standard.set(url.path, forKey: Key.lastImage)
+    }
+
+    // either puts the last wallpaper back or shows the first found to avoid empty wallpaper
+    func showSomething() {
+        guard let url = currentImage ?? library.first else { return }
+        apply(url)
     }
 
     private func save(_ paths: [String]) {
         UserDefaults.standard.set(paths, forKey: Key.sources)
         sources = paths.map { URL(fileURLWithPath: $0) }
         rescan()
+        showSomething()
     }
 }
