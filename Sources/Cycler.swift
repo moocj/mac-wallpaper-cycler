@@ -59,6 +59,10 @@ final class Cycler: ObservableObject {
         save(paths)
     }
 
+    func removeSource(_ url: URL) {
+        save(sources.map(\.path).filter{ $0 != url.path })
+    }
+
     // get images inside source folders
     func rescan() {
         var found: [URL] = []

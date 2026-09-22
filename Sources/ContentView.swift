@@ -17,11 +17,23 @@ struct ContentView: View {
             } else {
                 VStack(alignment: .leading, spacing: 6) {
                     ForEach(cycler.sources, id: \.self) {url in
-                        Text(url.lastPathComponent)
-                            .font(.system(size:11))
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                            .help(url.path)
+                        HStack {
+                            Text(url.lastPathComponent)
+                                .font(.system(size:11))
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .help(url.path)
+                            Spacer()
+                            Button {
+                                cycler.removeSource(url)
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size:11))
+                                    .foregroundStyle(.secondary)
+                            }
+                            .buttonStyle(.plain)
+                            .help("Remove this folder")
+                        }
                     }
                 }
                 Text("\(cycler.library.count) wallpapers found")
