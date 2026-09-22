@@ -17,6 +17,10 @@ final class Cycler: ObservableObject {
         "jpg", "jpeg", "png", "heic", "heif", "tif", "tiff", "bmp", "gif", "webp"
     ]
 
+    // how often to change (15 mins)
+    private let changeEvery: TimeInterval = 15 * 60
+    private var timer: Timer?
+
     private enum Key {
         static let sources = "sources"
         static let lastImage = "lastImage"
@@ -32,6 +36,7 @@ final class Cycler: ObservableObject {
 
         rescan()
         showSomething()
+        startTimer()
     }
 
     // ask for folder(s) and add any that aren't in list
@@ -107,6 +112,15 @@ final class Cycler: ObservableObject {
         apply(url)
     }
 
+    private func startTimer() {
+        timer?.invalidate()
+        let repeating = Timer(timeInterval: changeEvery, repeats: true) {
+            [weak self] _ in self?.next()
+        }
+        // .common means it will still work if another menu is open
+        RunLoop.main.add(repeating, forMode: .common)
+        timer = repeating
+    }
     // stores where current wallpaper is
     private var currentIndex: Int? {
         guard let current = currentImage else { return nil }
