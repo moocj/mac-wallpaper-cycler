@@ -124,6 +124,8 @@ struct ContentView: View {
                     .disabled(!cycler.canGoBack)
                 Button("Next") { cycler.next() }
                     .disabled(cycler.library.isEmpty)
+                Button("Hide") { cycler.hideCurrent() }
+                    .disabled(cycler.currentImage == nil)
                 Spacer()
                 Button(cycler.isPaused ? "Resume" : "Pause") {
                     cycler.isPaused.toggle()
